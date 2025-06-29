@@ -53,7 +53,6 @@ export const updateUser = async (
 
     const user = await prisma.user.update({
       where: {
-        clerkUserId: req.clerkUserId,
         email,
       },
       data: req.body,
@@ -79,7 +78,6 @@ export const deleteUser = async (
 
     const user = await prisma.user.delete({
       where: {
-        clerkUserId: req.clerkUserId,
         email,
       },
     });
