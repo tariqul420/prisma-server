@@ -13,6 +13,14 @@ enum Role {
   ADMIN
 }
 
+enum Status {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
 model User {
   id String @id @default(uuid())
   clerkUserId String @unique
@@ -36,4 +44,53 @@ model Blog {
   slug String @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@map("blogs")
+}
+
+model Product {
+  id String @id @default(uuid())
+  title String
+  titleBengali String
+  shortDesc String
+  imageUrls String[]
+  regularPrice Float
+  salePrice Float
+  detailedDesc String
+  tag String
+  packageDuration String
+  weight String
+  categories Category[] 
+  slug String @unique
+  orders Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@map("products")
+}
+
+model Category {
+  id String @id @default(uuid())
+  name String
+  slug String @unique
+  products Product[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@map("categories")
+}
+
+model Order {
+  id String @id @default(uuid())
+  orderId String
+  product Product @relation(fields: [productId], references: [id])
+  productId String
+  quantity Int
+  name String
+  phone String
+  email String?
+  address String
+  orderNote String?
+  paymentMethod String @default("cash-on-delivery")
+  status Status @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@map("orders")
 }
