@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
+import slugify from 'slugify';
 import prisma from '../lib/db-connect';
 
 export const getUserRole = async (
@@ -30,8 +31,30 @@ export const createUser = async (
   next: NextFunction,
 ) => {
   try {
+    // Destructure userData correctly from req.body
+    const { firstName, lastName, email } = req.body;
+
+    // Validate required fields
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    // Create name for slug, using email prefix as fallback
+    const name =
+      `${firstName || ''} ${lastName || ''}`.trim() || email.split('@')[0];
+
+    let slug = slugify(name, { lower: true, strict: true });
+
+    // Check for existing user with the same slug
+    const existingUser = await prisma.user.findUnique({ where: { slug } });
+
+    if (existingUser) {
+      const uniqueSuffix = Date.now().toString(36);
+      slug = `${slug}-${uniqueSuffix}`;
+    }
+
     const newUser = await prisma.user.create({
-      data: req.body,
+      data: { ...req.body, slug },
     });
 
     res.status(201).json({
@@ -42,7 +65,6 @@ export const createUser = async (
     next(error);
   }
 };
-
 export const updateUser = async (
   req: Request,
   res: Response,
@@ -135,9 +157,14 @@ export const getUserForAdmin = async (
         }
       : {};
 
-    const users = await prisma.user.findMany({
-      where: { role: { not: 'ADMIN' } },
-    });
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where: { role: { not: 'ADMIN' } },
+      }),
+      prisma.user.count({
+        where: { role: { not: 'ADMIN' } },
+      }),
+    ]);
   } catch (error) {
     next(error);
   }
